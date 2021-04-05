@@ -1,0 +1,2 @@
+# BeatmapAutoGeneration
+Osu!Maniaのビートマップの自動生成実験のリポジトリ
