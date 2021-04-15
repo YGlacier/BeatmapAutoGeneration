@@ -111,6 +111,11 @@ def trimmed_to_time_stamp(trimmed_data_path, time_stamp_path):
     time_stamps = sorted(list(set(time_stamps)))
     time_stamp_file.write(music_file_name + "\n")
 
+    total_time = time_stamps[-1] - time_stamps[0]
+    total_action = len(lines) - 1
+    density = total_action / total_time * 1000
+    time_stamp_file.write(str(density) + "\n")
+
     current_time = 0
     is_done = False
 
