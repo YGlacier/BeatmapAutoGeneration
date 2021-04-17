@@ -11,7 +11,6 @@ for path in paths:
     for file in files:
         if os.path.isfile(path + "wav/" + file):
             y, sr = librosa.load(path + "wav/" + file, sr=44100)
-            y, _ = librosa.effects.trim(y)
 
             for N in Ns:
                 amp = np.abs(librosa.stft(y, n_fft=N, hop_length=hop_length))

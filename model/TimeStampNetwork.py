@@ -30,7 +30,7 @@ class TimeStampNetwork(nn.Module):
 
     def forward(self, input):
         lstm_in = self.model_cnn(input[0])
-        lstm_in = torch.cat((lstm_in.view(len(input[0]), 1, -1), input[1].view(len(input[0]), 1 ,10)), dim=2)
+        lstm_in = torch.cat((lstm_in.view(input[0].shape[0], 1,-1), input[1].view(input[0].shape[0], 1 ,-1)), dim=2)
         lstm_out, _ = self.model_blstm(lstm_in)
         lstm_out = self.model_tanh(lstm_out)
         output = self.model_fc(lstm_out)
