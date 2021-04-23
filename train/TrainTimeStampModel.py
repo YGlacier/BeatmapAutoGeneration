@@ -93,14 +93,18 @@ for file_path in timestamp_file_names:
     
 # train the model
 learn_rate = 0.001
-seed = 0
-total_epoch = 25
+seed = 4
+total_epoch = 100
 batch_size = 32
-batch_per_epoch = 1000
+batch_per_epoch = 500
 
 
-device = torch.device("cuda:3" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+cpu = torch.device("cpu")
 model = TimeStampNetwork().to(device)
+
+if device == "cuda":
+    model = torch.nn.DataParallel(model)
 
 np_random = np.random.RandomState()
 np_random.seed(seed)
@@ -112,6 +116,31 @@ optimizer = optim.RMSprop(model.parameters(), lr=learn_rate)
 
 epoch_loss = []
 
+'''
+for density in range(10):
+    for timestamp_index in range(len(timestamp_list[density])):
+        print(loaded_music_name[timestamp_to_music_index[density][timestamp_index]])
+
+        input_mel = input_mel_list[timestamp_to_music_index[density][timestamp_index]]
+        true_timestamp = timestamp_list[density][timestamp_index]
+        density_vector = np.array([0] * 10)
+        density_vector[density] = 1
+        density_matrix = np.tile(density_vector, (input_mel.shape[0], 1))
+
+        input_mel = torch.Tensor(input_mel).to(device)
+        density_matrix = torch.Tensor(density_matrix).to(device)
+        true_timestamp = torch.Tensor(true_timestamp).to(device)
+
+        
+
+        output = model.forward([input_mel, density_matrix])
+        loss = loss_function(output.squeeze(), true_timestamp)
+
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+'''
 for epoch in range(total_epoch):
     instance_loss = []
     for instance in range(batch_per_epoch):
@@ -123,26 +152,40 @@ for epoch in range(total_epoch):
             else:
                 break
         timestamp_index = np_random.randint(0, len(timestamp_list[density]))
+
+        # print(loaded_music_name[timestamp_to_music_index[density][timestamp_index]])
+
         input_mel = input_mel_list[timestamp_to_music_index[density][timestamp_index]]
         true_timestamp = timestamp_list[density][timestamp_index]
         density_vector = np.array([0] * 10)
         density_vector[density] = 1
         density_matrix = np.tile(density_vector, (input_mel.shape[0], 1))
 
-        model.zero_grad()
+        input_mel = torch.Tensor(input_mel).to(device)
+        density_matrix = torch.Tensor(density_matrix).to(device)
+        true_timestamp = torch.Tensor(true_timestamp).to(device)
 
-        output = model.forward([torch.Tensor(input_mel).to(device), torch.Tensor(density_matrix).to(device)])
-        loss = loss_function(output.squeeze(), torch.Tensor(true_timestamp).to(device))
+        
+
+        output = model.forward([input_mel, density_matrix])
+        loss = loss_function(output.squeeze(), true_timestamp)
         instance_loss.append(loss.item())
+
+        optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
+        del input_mel
+        del density_matrix
+        del true_timestamp
+        del loss
         #print(loss)
 
     epoch_loss.append(sum(instance_loss))
     print("Epoch " + str(epoch) + "Total Loss: " + str(sum(instance_loss)))
     model_save_path = "../Data/model/" + str(seed) + "/" + str(epoch) + ".model"
     torch.save(model.state_dict(), model_save_path)
+
 
 np.savetxt("../Data/model/" + str(seed) + "/loss.txt", np.array(epoch_loss))
 '''
